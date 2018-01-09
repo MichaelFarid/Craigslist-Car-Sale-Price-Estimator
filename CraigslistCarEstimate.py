@@ -6,9 +6,11 @@ from tkinter import *
 import time
 from selenium import webdriver
 
+numofCraigsCars=30
+
 def getAllVehicleListingHTML(make, model, year):
     HTML=[]
-    for i in range(0,20):
+    for i in range(0,1):
         num =str(i*120)
         site= "https://dallas.craigslist.org/search/cta?"+"s="+num+"&sort=rel&auto_make_model="+ make+ "+"+model+"+&min_auto_year="+year+"&max_auto_year="+year
         html=urlopen(site)
@@ -18,6 +20,7 @@ def getAllVehicleListingHTML(make, model, year):
             break;
         else:
             HTML=HTML+postingsHTML
+    HTML=HTML[0:numofCraigsCars]
     return HTML
 
 
@@ -30,13 +33,12 @@ def getAllVehicleListingIDs(make, model, year):
     return ids
 
 
-
 def getAllVehicleDetails(make, model, year):
     endings=getAllVehicleListingIDs(make, model, year)
     cars=[]
     for ending in endings:
         data=[]
-        site="https://dallas.craigslist.com"+ending
+        site=ending
         html=urlopen(site)
         soup=BeautifulSoup(html, "lxml")
         price=soup.find("span", class_="price")
@@ -65,8 +67,17 @@ def getCraigslistFinal(make,model,year, num):
     result=slope*int(num) +intercept
     return result
 
+def getWebEstimate(vin):
+    site="https://www.cargurus.com/Cars/instantMarketValueFromVIN.action?startUrl=%2F&carDescription.vin="+vin
+    driver = webdriver.Chrome(executable_path="/Users/micha/Desktop/chromedriver")
+    driver.get(site)
+    time.sleep(3)
+    result=str(driver.find_element_by_id('instantMarketValuePrice').text)[1:]
+    return result
+    driver.close()
 
-fields = 'Make', 'Model', 'Year','Mileage'
+
+fields = 'Make', 'Model', 'Year','Mileage', 'Vin Number'
 
 def fetch(entries):
    make=entries[0].get()
@@ -77,7 +88,8 @@ def fetch(entries):
    craigs=str("Craigslist Estimate: "+str(getCraigslistFinal(make,model, year, mileage)))
 
    label.config(text=craigs)
-
+   if len(vin)>4:
+        label2.config(text=('Web estimate:'+ getWebEstimate(vin)))
 
 
 def makeform(root, fields):
@@ -103,5 +115,9 @@ if __name__ == '__main__':
    b2.pack(side=LEFT, padx=5, pady=5)
    label = Label(root, text="Craigslist estimate:")
    label.pack()
+   label2=Label(root, text="Web estimate:")
+   label2.pack()
 
    root.mainloop()
+
+print()
